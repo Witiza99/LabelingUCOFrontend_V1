@@ -214,7 +214,18 @@ export class ImageService {
   async exportSelectedImage(selectedFormat: string): Promise<void> {
     if (this.selectedImageIndex !== null) {
       const imageWithMetadata = this.images[this.selectedImageIndex];
-      await this.exportService.exportImageWithFormat(imageWithMetadata, selectedFormat);
+
+      let imageToExport: ImageWithMetadata;
+      if (imageWithMetadata.metadata) {
+        const jsonMetadata = this.shapesToJson(imageWithMetadata.metadata);
+        const imgWithMetadataembed = await this.embedJsonInImage(imageWithMetadata.file, jsonMetadata);
+        imageToExport = {file: imgWithMetadataembed, metadata: imageWithMetadata.metadata};
+      } else {
+        //console.log("Download imagen without metadata");
+        imageToExport = {file: imageWithMetadata.file, metadata: imageWithMetadata.metadata};
+      }
+      
+      await this.exportService.exportImageWithFormat(imageToExport, selectedFormat);
     } else {
       console.error('No image selected');
     }
@@ -222,7 +233,24 @@ export class ImageService {
 
   // Generate and download ZIP file for all images with format
   async exportAllImages(selectedFormat: string): Promise<void> {
-    await this.exportService.exportAllImagesWithFormat(this.images, selectedFormat);
+    // Array to hold the processed images
+    const processedImages: ImageWithMetadata[] = [];
+
+    // Iterate over each image in the `this.images` array
+    for (const imageWithMetadata of this.images) {
+        let imageToExport: ImageWithMetadata;
+
+        if (imageWithMetadata.metadata) {
+            const jsonMetadata = this.shapesToJson(imageWithMetadata.metadata);
+            const imgWithMetadataEmbed = await this.embedJsonInImage(imageWithMetadata.file, jsonMetadata);
+            imageToExport = { file: imgWithMetadataEmbed, metadata: imageWithMetadata.metadata };
+        } else {
+            imageToExport = { file: imageWithMetadata.file, metadata: imageWithMetadata.metadata };
+        }
+        processedImages.push(imageToExport);
+    }
+    // Export all processed images with the selected format
+    await this.exportService.exportAllImagesWithFormat(processedImages, selectedFormat);
   }
 
 }

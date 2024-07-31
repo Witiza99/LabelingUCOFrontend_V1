@@ -158,38 +158,73 @@ export class AppComponent implements OnInit {
     });
   }
   
-  //Get blob (ZIP) and return file[] with all images
-  async extractImagesFromZip(zipBlob: Blob): Promise<File[]> {
+  // Get blob (ZIP) and return File[] with all images
+  async  extractImagesFromZip(zipBlob: Blob): Promise<File[]> {
     try {
-      // Create instance JSZip y charge File ZIP
-      const zip = await JSZip.loadAsync(zipBlob);
-  
-      // Array for save all images
-      const extractedFiles: File[] = [];
-  
-      // Iterate each files from File ZIP
-      await Promise.all(
-        Object.keys(zip.files).map(async (fileName) => {
-          const zipEntry = zip.files[fileName];
-  
-          // Check if file is a folder or file
-          if (!zipEntry.dir) {
-            // Get file like blob
-            const fileData = await zipEntry.async('blob');
-  
-            // Create file 
-            const file = new File([fileData], zipEntry.name, { type: fileData.type });
-  
-            // Add file to array for save all images
-            extractedFiles.push(file);
+        // Create JSZip instance and load the ZIP file
+        const zip = await JSZip.loadAsync(zipBlob);
+        console.log('ZIP file loaded successfully');
+
+        // Array to save all images with their index
+        const extractedFiles: { index: number, frameNumber: number, file: File }[] = [];
+
+        // Iterate through each file in the ZIP
+        await Promise.all(
+          Object.keys(zip.files).map(async (fileName) => {
+              const zipEntry = zip.files[fileName];
+
+              // Check if it's a file and not a directory
+              if (!zipEntry.dir) {
+                  // Get the file as a Blob
+                  const fileData = await zipEntry.async('blob');
+                  console.log(`Extracted blob data for file: ${fileName}`);
+
+                  // Create a File object
+                  const file = new File([fileData], zipEntry.name, { type: fileData.type });
+
+                  // Extract index and frame number from the file name
+                  const idMatch = fileName.match(/(\d+)-frame-(\d+)\.png$/);
+                  const index = idMatch ? parseInt(idMatch[1], 10) : -1; // Extract the index
+                  const frameNumber = idMatch ? parseInt(idMatch[2], 10) : -1; // Extract the frame number
+
+                  // Log extracted information
+                  /*console.log(`Processing file: ${fileName}`);
+                  console.log(`Extracted index: ${index}`);
+                  console.log(`Extracted frame number: ${frameNumber}`);*/
+
+                  // Add file to the array with index and frame number
+                  extractedFiles.push({ index, frameNumber, file });
+              }
+          })
+        );
+
+        // Log the list of files before sorting
+        /*console.log('Files before sorting:', extractedFiles.map(item => ({
+          fileName: item.file.name,
+          index: item.index,
+          frameNumber: item.frameNumber
+        })));*/
+
+      // Sort files by index and then by frame number
+      extractedFiles.sort((a, b) => {
+          if (a.index === b.index) {
+              return a.frameNumber - b.frameNumber; // Sort by frame number if indices are the same
           }
-        })
-      );
-  
-      return extractedFiles;
+          return a.index - b.index; // Sort by index
+      });
+
+      // Log the list of files after sorting
+      /*console.log('Files after sorting:', extractedFiles.map(item => ({
+          fileName: item.file.name,
+          index: item.index,
+          frameNumber: item.frameNumber
+      })));*/
+
+      // Return sorted images
+      return extractedFiles.map(item => item.file);
     } catch (error) {
-      console.error('Error with extract file from ZIP:', error);
-      throw error;
+        console.error('Error extracting files from ZIP:', error);
+        throw error;
     }
   }
 }

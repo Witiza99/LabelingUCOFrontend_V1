@@ -30,6 +30,7 @@ export class ExportService {
   //export yolo format 1 image
   private async exportAsYOLO(imageWithMetadata: ImageWithMetadata): Promise<void> {
     const zip = new JSZip();
+    
     const image = imageWithMetadata.file;
     const annotations = this.metadataToYOLO(imageWithMetadata.metadata);
     const annotationFileName = image.name.replace(/\.[^/.]+$/, '.txt'); // Cambia extensión a .txt
