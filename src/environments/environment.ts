@@ -1,3 +1,4 @@
 export const environment = {
-    api_url: /*process.env['API_URL'] ||*/ "http://localhost:3000/"
+    production: false,
+    api_url: "http://127.0.0.1:3000/" 
 };
