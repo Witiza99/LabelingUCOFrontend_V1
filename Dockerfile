@@ -22,8 +22,8 @@ COPY --from=build /app/package*.json ./
 
 RUN npm install
 
-# Exponer el puerto 4200
-EXPOSE 4200
+# Exponer el puerto 4201
+EXPOSE 4201
 
 CMD ["npm", "run", "server:ssr"]
 
